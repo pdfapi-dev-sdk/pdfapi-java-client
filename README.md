@@ -141,6 +141,35 @@ PdfApiClientConfig config = PdfApiClientConfig.builder()
         .build();
 ```
 
+## HTTP Client Options
+
+The library supports multiple HTTP client implementations:
+
+```java
+// Default OkHttp client (recommended)
+PdfApiClient client1 = PdfApiClientFactory.createClient(config);
+
+// Explicitly using OkHttp
+PdfApiClient client2 = PdfApiClientFactory.createWithOkHttp(config);
+
+// Using Apache HTTP Client
+PdfApiClient client3 = PdfApiClientFactory.createWithApacheHttpClient(config);
+
+// Using custom implementation
+MyCustomHttpClient customClient = new MyCustomHttpClient();
+PdfApiClient client4 = PdfApiClientFactory.createWithCustomHttpClient(config, customClient);
+```
+
+To implement a custom HTTP client, implement the `HttpClient` interface:
+```java
+public interface HttpClient {
+    CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String jsonBody);
+    CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String fileName, InputStream content, String contentType);
+    CompletableFuture<HttpResponse> get(String url, Map<String, String> headers);
+    void close();
+}
+```
+
 ## Page Formats
 
 The following page formats are supported:
