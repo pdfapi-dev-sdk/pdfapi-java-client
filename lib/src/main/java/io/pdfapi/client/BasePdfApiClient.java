@@ -9,6 +9,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -17,6 +20,7 @@ import io.pdfapi.client.http.HttpResponse;
 import io.pdfapi.client.model.ConversionProperties;
 
 public class BasePdfApiClient implements PdfApiClient {
+    private static final Logger logger = LoggerFactory.getLogger(BasePdfApiClient.class);
     private static final String HEADER_API_KEY = "Api-Key";
     private static final long INITIAL_POLLING_DELAY_MS = 500;
     private static final long MAX_POLLING_DELAY_MS = 5000;
@@ -40,26 +44,37 @@ public class BasePdfApiClient implements PdfApiClient {
 
     @Override
     public CompletableFuture<InputStream> convert(ConversionRequest request) {
+        logger.info("Starting PDF conversion");
         return initializeConversion(request.getProperties())
-                .thenCompose(conversionId -> 
-                    uploadAssetsInParallel(conversionId, request.getAssets())
-                        .thenCompose(v -> performConversion(conversionId, request.getHtmlContent()))
-                        .thenCompose(v -> waitForResult(conversionId))
-                );
+                .thenCompose(conversionId -> {
+                    logger.debug("Conversion initialized with ID: {}", conversionId);
+                    return uploadAssetsInParallel(conversionId, request.getAssets())
+                        .thenCompose(v -> {
+                            logger.debug("Assets uploaded for conversion {}", conversionId);
+                            return performConversion(conversionId, request.getHtmlContent());
+                        })
+                        .thenCompose(v -> {
+                            logger.debug("Starting to wait for conversion result {}", conversionId);
+                            return waitForResult(conversionId);
+                        });
+                });
     }
 
     private CompletableFuture<String> initializeConversion(ConversionProperties properties) {
         try {
             String json = objectMapper.writeValueAsString(properties);
+            logger.debug("Initializing conversion with properties: {}", json);
             return httpClient.post(baseUrl + PATH_CONVERSIONS, getHeaders(), json)
                     .thenApply(response -> parseJsonResponse(response, "id"));
         } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize conversion properties", e);
             return CompletableFuture.failedFuture(
                     new PdfApiClientException("Failed to serialize conversion properties", e));
         }
     }
 
     private CompletableFuture<Void> uploadAssetsInParallel(String conversionId, List<AssetInput> assets) {
+        logger.debug("Uploading {} assets for conversion {}", assets.size(), conversionId);
         List<CompletableFuture<Void>> uploads = assets.stream()
             .map(asset -> attachAsset(conversionId, asset.getContent(), asset.getFileName()))
             .collect(Collectors.toList());
@@ -68,12 +83,14 @@ public class BasePdfApiClient implements PdfApiClient {
     }
 
     private CompletableFuture<Void> attachAsset(String conversionId, InputStream assetStream, String fileName) {
+        logger.debug("Attaching asset {} to conversion {}", fileName, conversionId);
         return httpClient.post(
                 baseUrl + PATH_CONVERSIONS + "/" + conversionId + PATH_ASSETS,
                 getHeaders(),
                 fileName,
                 assetStream,
-                "application/octet-stream"
+                "application/octet-stream",
+                "asset"
         ).thenApply(response -> {
             handleResponse(response);
             return null;
@@ -81,14 +98,17 @@ public class BasePdfApiClient implements PdfApiClient {
     }
 
     private CompletableFuture<Void> performConversion(String conversionId, InputStream htmlContent) {
+        logger.debug("Starting conversion for ID: {}", conversionId);
         return httpClient.post(
                 baseUrl + PATH_CONVERSIONS + "/" + conversionId + PATH_CONVERT,
                 getHeaders(),
                 "index.html",
                 htmlContent,
-                "text/html"
+                "text/html",
+                "index"
         ).thenApply(response -> {
             handleResponse(response);
+            logger.debug("Conversion started successfully for ID: {}", conversionId);
             return null;
         });
     }
@@ -98,15 +118,19 @@ public class BasePdfApiClient implements PdfApiClient {
     }
 
     private CompletableFuture<InputStream> waitForResultWithBackoff(String conversionId, long currentDelay) {
+        logger.trace("Checking conversion status for {} with delay {}ms", conversionId, currentDelay);
         return getConversionResult(conversionId)
                 .thenCompose(result -> {
                     if (result == null) {
+                        logger.trace("Conversion {} still in progress, next check in {}ms", conversionId, 
+                            Math.min((long)(currentDelay * BACKOFF_MULTIPLIER), MAX_POLLING_DELAY_MS));
                         CompletableFuture<Void> delay = new CompletableFuture<>();
                         CompletableFuture.delayedExecutor(currentDelay, TimeUnit.MILLISECONDS)
                             .execute(() -> delay.complete(null));
                         return delay.thenCompose(v -> waitForResultWithBackoff(conversionId,
                             Math.min((long)(currentDelay * BACKOFF_MULTIPLIER), MAX_POLLING_DELAY_MS)));
                     }
+                    logger.info("Conversion {} completed successfully", conversionId);
                     return CompletableFuture.completedFuture(result);
                 });
     }
@@ -132,7 +156,8 @@ public class BasePdfApiClient implements PdfApiClient {
     }
 
     private HttpResponse handleResponse(HttpResponse response) {
-        if (response.getStatusCode() != 200 && response.getStatusCode() != 204) {
+        if (response.getStatusCode() != 200 && response.getStatusCode() != 201 && response.getStatusCode() != 204) {
+            logger.error("Request failed with status {}: {}", response.getStatusCode(), response.getBodyAsString());
             throw new PdfApiClientException("Request failed with status " + response.getStatusCode() + ": " + response.getBodyAsString());
         }
         return response;
@@ -146,6 +171,7 @@ public class BasePdfApiClient implements PdfApiClient {
 
     @Override
     public void close() {
+        logger.debug("Closing PDF API client");
         httpClient.close();
     }
 } 

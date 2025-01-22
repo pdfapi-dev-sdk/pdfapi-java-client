@@ -12,7 +12,7 @@ plugins {
 }
 
 group = 'io.pdfapi'
-version = '0.1.0'
+version = '1.0.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -21,19 +21,29 @@ repositories {
 
 dependencies {
     // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
-    testImplementation 'org.mockito:mockito-core:5.10.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testImplementation 'org.mockito:mockito-core:4.0.0'
+    testImplementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    testImplementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    testImplementation 'org.apache.httpcomponents:httpmime:4.5.13'
+    testImplementation 'org.springframework:spring-web:5.3.13'
+    testImplementation 'org.slf4j:slf4j-simple:2.0.9'
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api 'com.squareup.okhttp3:okhttp:4.12.0'
-    api 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
-    api 'com.fasterxml.jackson.core:jackson-core:2.16.1'
-    api 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
-    api 'org.apache.httpcomponents:httpclient:4.5.14'
+    api 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
+    api 'org.slf4j:slf4j-api:2.0.9'
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation libs.guava
+
+    // HTTP Client implementations - all optional
+    compileOnly 'com.squareup.okhttp3:okhttp:4.9.3'
+    compileOnly 'org.apache.httpcomponents:httpclient:4.5.13'
+    compileOnly 'org.apache.httpcomponents:httpmime:4.5.13'
+    compileOnly 'org.springframework:spring-web:5.3.13'
+    
+    // Runtime dependencies - OkHttp is the default implementation
+    runtimeOnly 'com.squareup.okhttp3:okhttp:4.9.3'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -43,6 +53,8 @@ java {
     }
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
+    withSourcesJar()
+    withJavadocJar()
 }
 
 tasks.named('test') {
@@ -50,10 +62,50 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+test {
+    useJUnitPlatform {
+        excludeTags 'integration'
+    }
+}
+
+// Integration tests task
+task integrationTest(type: Test) {
+    useJUnitPlatform {
+        includeTags 'integration'
+    }
+    
+    // Only run if PDFAPI_KEY is set
+    onlyIf {
+        System.getenv('PDFAPI_KEY') != null
+    }
+}
+
+// Add integration tests to check task
+check.dependsOn integrationTest
+
 publishing {
     publications {
-        maven(MavenPublication) {
+        mavenJava(MavenPublication) {
             from components.java
+            pom {
+                name = 'PDF API Java Client'
+                description = 'Java client library for PDF API'
+                
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'pdfapi'
+                        name = 'PDF API Team'
+                        email = 'support@pdfapi.io'
+                    }
+                }
+            }
         }
     }
 }

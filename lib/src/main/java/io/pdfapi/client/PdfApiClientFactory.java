@@ -1,10 +1,12 @@
 package io.pdfapi.client;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.springframework.web.client.RestTemplate;
 
 import io.pdfapi.client.http.ApacheHttpClient;
 import io.pdfapi.client.http.HttpClient;
 import io.pdfapi.client.http.OkHttpClient;
+import io.pdfapi.client.http.RestTemplateHttpClient;
 
 public class PdfApiClientFactory {
     /**
@@ -65,6 +67,29 @@ public class PdfApiClientFactory {
      */
     public static PdfApiClient createWithApacheHttpClient(PdfApiClientConfig config, CloseableHttpClient httpClient) {
         return new BasePdfApiClient(config, new ApacheHttpClient(httpClient));
+    }
+
+    /**
+     * Creates a new instance of PdfApiClient using Spring RestTemplate implementation with default configuration.
+     * This implementation is suitable for Spring-based applications.
+     * 
+     * @param config client configuration
+     * @return new client instance
+     */
+    public static PdfApiClient createWithRestTemplate(PdfApiClientConfig config) {
+        return new BasePdfApiClient(config, new RestTemplateHttpClient());
+    }
+
+    /**
+     * Creates a new instance of PdfApiClient using a pre-configured RestTemplate.
+     * Use this when you need to customize the RestTemplate configuration or share an existing instance.
+     * 
+     * @param config client configuration
+     * @param restTemplate pre-configured RestTemplate instance
+     * @return new client instance
+     */
+    public static PdfApiClient createWithRestTemplate(PdfApiClientConfig config, RestTemplate restTemplate) {
+        return new BasePdfApiClient(config, new RestTemplateHttpClient(restTemplate));
     }
 
     /**

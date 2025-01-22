@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractHttpClient implements HttpClient {
     protected abstract CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String jsonBody);
-    protected abstract CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName, InputStream content, String contentType);
+    protected abstract CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName, InputStream content, String contentType, String partName);
     protected abstract CompletableFuture<HttpResponse> executeGet(String url, Map<String, String> headers);
     protected abstract void closeInternal();
 
@@ -19,8 +19,8 @@ public abstract class AbstractHttpClient implements HttpClient {
     }
 
     @Override
-    public CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String fileName, InputStream content, String contentType) {
-        return executePost(url, headers, fileName, content, contentType)
+    public CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String fileName, InputStream content, String contentType, String partName) {
+        return executePost(url, headers, fileName, content, contentType, partName)
             .exceptionally(e -> {
                 throw new RuntimeException("Failed to execute POST request with file", e);
             });

@@ -10,8 +10,8 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -44,11 +44,14 @@ public class ApacheHttpClient extends AbstractHttpClient {
 
     @Override
     protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
-            InputStream content, String contentType) {
+            InputStream content, String contentType, String partName) {
         return CompletableFuture.supplyAsync(() -> {
             HttpPost httpPost = new HttpPost(url);
             headers.forEach(httpPost::addHeader);
-            httpPost.setEntity(new InputStreamEntity(content, ContentType.create(contentType)));
+
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            builder.addBinaryBody(partName, content, ContentType.create(contentType), fileName);
+            httpPost.setEntity(builder.build());
 
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 return convertResponse(response);

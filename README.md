@@ -14,12 +14,112 @@ A Java client library for converting HTML to PDF using the PDF API service.
 
 ## Installation
 
-Add the following dependency to your project:
+### Gradle
 
-```gradle
+```groovy
 dependencies {
-    implementation 'io.pdfapi:pdfapi-java-client:0.1.0'
+    implementation 'io.pdfapi:pdfapi-java-client:1.0.0'
 }
+```
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>io.pdfapi</groupId>
+    <artifactId>pdfapi-java-client</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+## HTTP Client Configuration
+
+By default, the library uses OkHttp as its HTTP client implementation. However, you can use alternative HTTP clients:
+
+### Using Apache HTTP Client
+
+#### Gradle
+
+```groovy
+dependencies {
+    implementation('io.pdfapi:pdfapi-java-client:1.0.0') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+}
+```
+
+#### Maven
+
+```xml
+<dependency>
+    <groupId>io.pdfapi</groupId>
+    <artifactId>pdfapi-java-client</artifactId>
+    <version>1.0.0</version>
+    <exclusions>
+        <exclusion>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.5.13</version>
+</dependency>
+```
+
+### Using Spring RestTemplate
+
+#### Gradle
+
+```groovy
+dependencies {
+    implementation('io.pdfapi:pdfapi-java-client:1.0.0') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
+    implementation 'org.springframework:spring-web:5.3.13'
+}
+```
+
+#### Maven
+
+```xml
+<dependency>
+    <groupId>io.pdfapi</groupId>
+    <artifactId>pdfapi-java-client</artifactId>
+    <version>1.0.0</version>
+    <exclusions>
+        <exclusion>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-web</artifactId>
+    <version>5.3.13</version>
+</dependency>
+```
+
+### Using Different HTTP Client Implementations
+
+```java
+// Default (OkHttp)
+PdfApiClient client = PdfApiClientFactory.createClient(config);
+
+// Apache HTTP Client
+PdfApiClient client = PdfApiClientFactory.createWithApacheHttpClient(config);
+
+// Spring RestTemplate
+PdfApiClient client = PdfApiClientFactory.createWithRestTemplate(config);
+
+// Custom pre-configured clients
+PdfApiClient client = PdfApiClientFactory.createWithOkHttp(config, customOkHttpClient);
+PdfApiClient client = PdfApiClientFactory.createWithApacheHttpClient(config, customApacheClient);
+PdfApiClient client = PdfApiClientFactory.createWithRestTemplate(config, customRestTemplate);
 ```
 
 ## Usage
@@ -139,35 +239,6 @@ PdfApiClientConfig config = PdfApiClientConfig.builder()
         .baseUrl("https://api.example.com") // Optional, defaults to https://api.pdfapi.io
         .timeoutSeconds(60)                // Optional, defaults to 30
         .build();
-```
-
-## HTTP Client Options
-
-The library supports multiple HTTP client implementations:
-
-```java
-// Default OkHttp client (recommended)
-PdfApiClient client1 = PdfApiClientFactory.createClient(config);
-
-// Explicitly using OkHttp
-PdfApiClient client2 = PdfApiClientFactory.createWithOkHttp(config);
-
-// Using Apache HTTP Client
-PdfApiClient client3 = PdfApiClientFactory.createWithApacheHttpClient(config);
-
-// Using custom implementation
-MyCustomHttpClient customClient = new MyCustomHttpClient();
-PdfApiClient client4 = PdfApiClientFactory.createWithCustomHttpClient(config, customClient);
-```
-
-To implement a custom HTTP client, implement the `HttpClient` interface:
-```java
-public interface HttpClient {
-    CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String jsonBody);
-    CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String fileName, InputStream content, String contentType);
-    CompletableFuture<HttpResponse> get(String url, Map<String, String> headers);
-    void close();
-}
 ```
 
 ## Page Formats

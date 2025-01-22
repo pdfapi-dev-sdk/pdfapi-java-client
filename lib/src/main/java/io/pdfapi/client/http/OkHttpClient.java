@@ -44,10 +44,10 @@ public class OkHttpClient extends AbstractHttpClient {
 
     @Override
     protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
-            InputStream content, String contentType) {
+            InputStream content, String contentType, String partName) {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart(fileName, fileName,
+                .addFormDataPart(partName, fileName,
                         new InputStreamRequestBody(MediaType.get(contentType), content))
                 .build();
 
