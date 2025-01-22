@@ -1,19 +1,21 @@
 package io.pdfapi.client.model;
 
+import java.util.Objects;
+
 public class ConversionProperties {
     private final PageFormat format;
-    private final String headerFile;
-    private final String footerFile;
+    private final String headerFileName;
+    private final String footerFileName;
     private final float scale;
     private final Margin margin;
     private final boolean landscape;
 
     private ConversionProperties(Builder builder) {
-        this.format = builder.format;
-        this.headerFile = builder.headerFile;
-        this.footerFile = builder.footerFile;
+        this.format = Objects.requireNonNull(builder.format, "Format must not be null");
+        this.headerFileName = builder.headerFileName;
+        this.footerFileName = builder.footerFileName;
         this.scale = builder.scale;
-        this.margin = builder.margin;
+        this.margin = Objects.requireNonNull(builder.margin, "Margin must not be null");
         this.landscape = builder.landscape;
     }
 
@@ -21,12 +23,12 @@ public class ConversionProperties {
         return format;
     }
 
-    public String getHeaderFile() {
-        return headerFile;
+    public String getHeaderFileName() {
+        return headerFileName;
     }
 
-    public String getFooterFile() {
-        return footerFile;
+    public String getFooterFileName() {
+        return footerFileName;
     }
 
     public float getScale() {
@@ -45,26 +47,37 @@ public class ConversionProperties {
         return new Builder();
     }
 
+    public static Builder builderFrom(ConversionProperties properties) {
+        Objects.requireNonNull(properties, "Properties must not be null");
+        return builder()
+            .format(properties.format)
+            .scale(properties.scale)
+            .margin(properties.margin)
+            .landscape(properties.landscape)
+            .headerFileName(properties.headerFileName)
+            .footerFileName(properties.footerFileName);
+    }
+
     public static class Builder {
         private PageFormat format;
-        private String headerFile;
-        private String footerFile;
+        private String headerFileName;
+        private String footerFileName;
         private float scale = 1.0f;
         private Margin margin;
         private boolean landscape;
 
         public Builder format(PageFormat format) {
-            this.format = format;
+            this.format = Objects.requireNonNull(format, "Format must not be null");
             return this;
         }
 
-        public Builder headerFile(String headerFile) {
-            this.headerFile = headerFile;
+        public Builder headerFileName(String headerFileName) {
+            this.headerFileName = headerFileName;
             return this;
         }
 
-        public Builder footerFile(String footerFile) {
-            this.footerFile = footerFile;
+        public Builder footerFileName(String footerFileName) {
+            this.footerFileName = footerFileName;
             return this;
         }
 
@@ -74,7 +87,7 @@ public class ConversionProperties {
         }
 
         public Builder margin(Margin margin) {
-            this.margin = margin;
+            this.margin = Objects.requireNonNull(margin, "Margin must not be null");
             return this;
         }
 
@@ -84,6 +97,9 @@ public class ConversionProperties {
         }
 
         public ConversionProperties build() {
+            if (format == null) {
+                throw new IllegalStateException("Format must be set");
+            }
             if (margin == null) {
                 margin = Margin.builder()
                     .top(0)

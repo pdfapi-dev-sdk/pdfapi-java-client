@@ -35,7 +35,9 @@ public class PdfApiClientTest {
                             .scale(1.0f)
                             .build())
                     .htmlContent(new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8)))
-                    .addAsset(getClass().getResourceAsStream("/style.css"), "style.css")
+                    .addAsset(AssetInput.of(getClass().getResourceAsStream("/style.css"), "style.css"))
+                    .headerFile(AssetInput.of(getClass().getResourceAsStream("/header.html"), "header.html"))
+                    .footerFile(AssetInput.of(getClass().getResourceAsStream("/footer.html"), "footer.html"))
                     .build();
 
             // Convert HTML to PDF and save to file

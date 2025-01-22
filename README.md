@@ -9,6 +9,7 @@ A Java client library for converting HTML to PDF using the PDF API service.
 - Builder pattern for easy configuration
 - Support for custom page formats, margins, and scaling
 - Asset attachment support
+- Header and footer support
 - OkHttp-based implementation
 
 ## Installation
@@ -22,6 +23,25 @@ dependencies {
 ```
 
 ## Usage
+
+### Minimal Usage
+
+```java
+// Create client
+PdfApiClient client = PdfApiClientFactory.createClient(
+    PdfApiClientConfig.builder().apiKey("your-api-key").build()
+);
+
+// Convert HTML to PDF with default A4 format
+String html = "<html><body><h1>Hello World</h1></body></html>";
+ConversionRequest request = ConversionRequest.builder()
+    .htmlContent(new ByteArrayInputStream(html.getBytes()))
+    .build();
+
+try (FileOutputStream output = new FileOutputStream("output.pdf")) {
+    client.convert(request, output).join();
+}
+```
 
 ### Basic Usage
 
@@ -47,34 +67,66 @@ ConversionProperties properties = ConversionProperties.builder()
         .landscape(false)
         .build();
 
+// Create conversion request
+String html = "<html><body><h1>Hello World</h1></body></html>";
+ConversionRequest request = ConversionRequest.builder()
+        .properties(properties)
+        .htmlContent(new ByteArrayInputStream(html.getBytes()))
+        .build();
+
 // Convert HTML to PDF
-String htmlContent = "<html><body><h1>Hello World</h1></body></html>";
-try (InputStream pdfStream = client.convertHtmlToPdf(properties, htmlContent).join()) {
-    // Save PDF to file
-    File outputFile = new File("output.pdf");
-    try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-        pdfStream.transferTo(fos);
-    }
+try (FileOutputStream output = new FileOutputStream("output.pdf")) {
+    client.convert(request, output).join();
 }
 ```
 
-### Advanced Usage
-
-For more control over the conversion process, you can use the individual API methods:
+### Advanced Usage with Assets and Headers/Footers
 
 ```java
-// Initialize conversion
-String conversionId = client.initializeConversion(properties).join();
+// Create header and footer assets
+AssetInput header = AssetInput.of(
+    new FileInputStream("header.html"),
+    "header.html"
+);
+AssetInput footer = AssetInput.of(
+    new FileInputStream("footer.html"),
+    "footer.html"
+);
 
-// Attach assets (optional)
-client.attachAsset(conversionId, new File("style.css")).join();
-client.attachAsset(conversionId, new File("image.png")).join();
+// Create style and image assets
+AssetInput styles = AssetInput.of(
+    new FileInputStream("styles.css"),
+    "styles.css"
+);
+AssetInput image = AssetInput.of(
+    new FileInputStream("image.png"),
+    "image.png"
+);
 
-// Perform conversion
-client.performConversion(conversionId, htmlContent).join();
+// Create conversion request with all assets
+ConversionRequest request = ConversionRequest.builder()
+        .properties(ConversionProperties.builder()
+                .format(PageFormat.A4)
+                .margin(Margin.builder()
+                        .top(50)    // Leave space for header
+                        .bottom(50) // Leave space for footer
+                        .left(20)
+                        .right(20)
+                        .build())
+                .scale(1.0f)
+                .landscape(false)
+                .build())
+        .htmlContent(new FileInputStream("content.html"))
+        .headerFile(header)  // Header will be automatically registered in properties
+        .footerFile(footer)  // Footer will be automatically registered in properties
+        .addAsset(styles)
+        .addAsset(image)
+        .build();
 
-// Get result (with polling)
-InputStream pdfStream = client.getConversionResult(conversionId).join();
+// Convert HTML to PDF
+try (FileOutputStream output = new FileOutputStream("output.pdf")) {
+    client.convert(request, output).join();
+}
 ```
 
 ## Configuration Options

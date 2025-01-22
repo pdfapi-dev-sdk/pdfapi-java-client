@@ -4,18 +4,24 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import io.pdfapi.client.model.ConversionProperties;
+import io.pdfapi.client.model.PageFormat;
 
 public class ConversionRequest {
     private final ConversionProperties properties;
     private final InputStream htmlContent;
     private final List<AssetInput> assets;
+    private final AssetInput headerFile;
+    private final AssetInput footerFile;
 
     private ConversionRequest(Builder builder) {
-        this.properties = builder.properties;
-        this.htmlContent = builder.htmlContent;
+        this.properties = Objects.requireNonNull(builder.properties, "Properties must not be null");
+        this.htmlContent = Objects.requireNonNull(builder.htmlContent, "HTML content must not be null");
         this.assets = Collections.unmodifiableList(new ArrayList<>(builder.assets));
+        this.headerFile = builder.headerFile;
+        this.footerFile = builder.footerFile;
     }
 
     public ConversionProperties getProperties() {
@@ -30,6 +36,14 @@ public class ConversionRequest {
         return assets;
     }
 
+    public AssetInput getHeaderFile() {
+        return headerFile;
+    }
+
+    public AssetInput getFooterFile() {
+        return footerFile;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -38,29 +52,65 @@ public class ConversionRequest {
         private ConversionProperties properties;
         private InputStream htmlContent;
         private final List<AssetInput> assets = new ArrayList<>();
+        private AssetInput headerFile;
+        private AssetInput footerFile;
 
         public Builder properties(ConversionProperties properties) {
-            this.properties = properties;
+            this.properties = Objects.requireNonNull(properties, "Properties must not be null");
             return this;
         }
 
         public Builder htmlContent(InputStream htmlContent) {
-            this.htmlContent = htmlContent;
+            this.htmlContent = Objects.requireNonNull(htmlContent, "HTML content must not be null");
             return this;
         }
 
-        public Builder addAsset(InputStream content, String fileName) {
-            this.assets.add(AssetInput.of(content, fileName));
+        public Builder addAsset(AssetInput asset) {
+            this.assets.add(Objects.requireNonNull(asset, "Asset must not be null"));
+            return this;
+        }
+
+        public Builder headerFile(AssetInput headerFile) {
+            this.headerFile = Objects.requireNonNull(headerFile, "Header file must not be null");
+            if (this.properties != null) {
+                this.properties = ConversionProperties.builderFrom(properties)
+                    .headerFileName(headerFile.getFileName())
+                    .build();
+            }
+            return this;
+        }
+
+        public Builder footerFile(AssetInput footerFile) {
+            this.footerFile = Objects.requireNonNull(footerFile, "Footer file must not be null");
+            if (this.properties != null) {
+                this.properties = ConversionProperties.builderFrom(properties)
+                    .footerFileName(footerFile.getFileName())
+                    .build();
+            }
             return this;
         }
 
         public ConversionRequest build() {
             if (properties == null) {
-                throw new IllegalStateException("Properties must be set");
+                properties = ConversionProperties.builder()
+                    .format(PageFormat.A4)  // Set a default format since it's required
+                    .build();
             }
-            if (htmlContent == null) {
-                throw new IllegalStateException("HTML content must be set");
+            
+            // Update properties with header/footer filenames if they exist
+            if ((headerFile != null || footerFile != null) && properties != null) {
+                ConversionProperties.Builder propsBuilder = ConversionProperties.builderFrom(properties);
+
+                if (headerFile != null) {
+                    propsBuilder.headerFileName(headerFile.getFileName());
+                }
+                if (footerFile != null) {
+                    propsBuilder.footerFileName(footerFile.getFileName());
+                }
+
+                properties = propsBuilder.build();
             }
+
             return new ConversionRequest(this);
         }
     }
