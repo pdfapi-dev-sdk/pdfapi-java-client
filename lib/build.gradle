@@ -88,8 +88,8 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             pom {
-                name = 'PDF API Java Client'
-                description = 'Java client library for PDF API'
+                name = 'pdfapi.dev Java Client'
+                description = 'Java client library for pdfapi.dev'
                 
                 licenses {
                     license {
@@ -100,9 +100,9 @@ publishing {
                 
                 developers {
                     developer {
-                        id = 'pdfapi'
+                        id = 'pdfapi.dev'
                         name = 'PDF API Team'
-                        email = 'support@pdfapi.io'
+                        email = 'support@pdfapi.dev'
                     }
                 }
             }
