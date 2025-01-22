@@ -1,10 +1,5 @@
 package io.pdfapi.client.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -14,7 +9,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class ApacheHttpClient extends AbstractHttpClient {
     private final CloseableHttpClient httpClient;
@@ -44,7 +44,7 @@ public class ApacheHttpClient extends AbstractHttpClient {
 
     @Override
     protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
-            InputStream content, String contentType, String partName) {
+                                                          InputStream content, String contentType, String partName) {
         return CompletableFuture.supplyAsync(() -> {
             HttpPost httpPost = new HttpPost(url);
             headers.forEach(httpPost::addHeader);
@@ -77,8 +77,18 @@ public class ApacheHttpClient extends AbstractHttpClient {
 
     private HttpResponse convertResponse(CloseableHttpResponse response) throws IOException {
         HttpEntity entity = response.getEntity();
-        String body = entity != null ? EntityUtils.toString(entity) : null;
-        return new SimpleHttpResponse(response.getStatusLine().getStatusCode(), body);
+        if (entity != null) {
+            return new StreamingHttpResponse(response.getStatusLine().getStatusCode(), readContent(entity), response);
+        } else {
+            response.close();
+            return new StreamingHttpResponse(response.getStatusLine().getStatusCode(), null, null);
+        }
+    }
+
+    private static InputStream readContent(HttpEntity entity) throws IOException {
+        try (final var content = entity.getContent()) {
+            return new ByteArrayInputStream(content.readAllBytes());
+        }
     }
 
     @Override

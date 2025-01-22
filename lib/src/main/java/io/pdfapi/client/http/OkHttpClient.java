@@ -14,6 +14,7 @@ import okhttp3.MultipartBody;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class OkHttpClient extends AbstractHttpClient {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
@@ -81,7 +82,13 @@ public class OkHttpClient extends AbstractHttpClient {
 
             @Override
             public void onResponse(Call call, Response response) {
-                future.complete(new OkHttpResponse(response));
+                ResponseBody body = response.body();
+                if (body != null) {
+                    future.complete(new StreamingHttpResponse(response.code(), body.byteStream(), response));
+                } else {
+                    response.close();
+                    future.complete(new StreamingHttpResponse(response.code(), null, null));
+                }
             }
         });
         return future;

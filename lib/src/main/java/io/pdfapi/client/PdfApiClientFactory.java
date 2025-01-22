@@ -30,7 +30,7 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithOkHttp(PdfApiClientConfig config) {
-        return new BasePdfApiClient(config, new OkHttpClient(config.getTimeoutSeconds()));
+        return new PdfApiClient(config, new OkHttpClient(config.getTimeoutSeconds()));
     }
 
     /**
@@ -42,7 +42,7 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithOkHttp(PdfApiClientConfig config, okhttp3.OkHttpClient okHttpClient) {
-        return new BasePdfApiClient(config, new OkHttpClient(okHttpClient));
+        return new PdfApiClient(config, new OkHttpClient(okHttpClient));
     }
 
     /**
@@ -54,7 +54,7 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithApacheHttpClient(PdfApiClientConfig config) {
-        return new BasePdfApiClient(config, new ApacheHttpClient());
+        return new PdfApiClient(config, new ApacheHttpClient());
     }
 
     /**
@@ -66,7 +66,7 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithApacheHttpClient(PdfApiClientConfig config, CloseableHttpClient httpClient) {
-        return new BasePdfApiClient(config, new ApacheHttpClient(httpClient));
+        return new PdfApiClient(config, new ApacheHttpClient(httpClient));
     }
 
     /**
@@ -77,7 +77,7 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithRestTemplate(PdfApiClientConfig config) {
-        return new BasePdfApiClient(config, new RestTemplateHttpClient());
+        return new PdfApiClient(config, new RestTemplateHttpClient());
     }
 
     /**
@@ -89,7 +89,7 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithRestTemplate(PdfApiClientConfig config, RestTemplate restTemplate) {
-        return new BasePdfApiClient(config, new RestTemplateHttpClient(restTemplate));
+        return new PdfApiClient(config, new RestTemplateHttpClient(restTemplate));
     }
 
     /**
@@ -102,6 +102,6 @@ public class PdfApiClientFactory {
      * @return new client instance
      */
     public static PdfApiClient createWithCustomHttpClient(PdfApiClientConfig config, HttpClient httpClient) {
-        return new BasePdfApiClient(config, httpClient);
+        return new PdfApiClient(config, httpClient);
     }
 } 

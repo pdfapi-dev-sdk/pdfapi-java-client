@@ -1,18 +1,23 @@
 package io.pdfapi.client.http;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class RestTemplateHttpClient extends AbstractHttpClient {
     private final RestTemplate restTemplate;
@@ -31,27 +36,28 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
             HttpHeaders httpHeaders = createHeaders(headers);
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<String> entity = new HttpEntity<>(jsonBody, httpHeaders);
-            
-            ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.POST, entity, byte[].class);
-            return new SimpleHttpResponse(response.getStatusCodeValue(), 
-                response.getBody() != null ? new String(response.getBody()) : null);
+
+            return restTemplate.execute(url, HttpMethod.POST, request -> {
+                request.getHeaders().putAll(entity.getHeaders());
+                request.getBody().write(jsonBody.getBytes());
+            }, response -> new StreamingHttpResponse(response.getStatusCode().value(), readContent(response), response));
         });
     }
 
     @Override
     protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
-            InputStream content, String contentType, String partName) {
+                                                          InputStream content, String contentType, String partName) {
         return CompletableFuture.supplyAsync(() -> {
             HttpHeaders httpHeaders = createHeaders(headers);
             httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
-            
+
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add(partName, new InputStreamResource(content) {
                 @Override
                 public String getFilename() {
                     return fileName;
                 }
-                
+
                 @Override
                 public long contentLength() {
                     return -1; // Length unknown
@@ -60,8 +66,8 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, httpHeaders);
             ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.POST, entity, byte[].class);
-            return new SimpleHttpResponse(response.getStatusCodeValue(),
-                response.getBody() != null ? new String(response.getBody()) : null);
+            final var bodyData = Optional.ofNullable(response.getBody()).map(ByteArrayInputStream::new).orElse(null);
+            return new StreamingHttpResponse(response.getStatusCodeValue(), bodyData, null);
         });
     }
 
@@ -70,11 +76,18 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
         return CompletableFuture.supplyAsync(() -> {
             HttpHeaders httpHeaders = createHeaders(headers);
             HttpEntity<?> entity = new HttpEntity<>(httpHeaders);
-            
-            ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);
-            return new SimpleHttpResponse(response.getStatusCodeValue(),
-                response.getBody() != null ? new String(response.getBody()) : null);
+
+            return restTemplate.execute(url, HttpMethod.GET, request -> {
+                request.getHeaders().putAll(entity.getHeaders());
+            }, response -> new StreamingHttpResponse(response.getStatusCode().value(), readContent(response), response));
         });
+    }
+
+    @NotNull
+    private static InputStream readContent(ClientHttpResponse response) throws IOException {
+        try (final var content = response.getBody()) {
+            return new ByteArrayInputStream(content.readAllBytes());
+        }
     }
 
     private HttpHeaders createHeaders(Map<String, String> headers) {
