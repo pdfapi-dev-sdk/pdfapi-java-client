@@ -15,7 +15,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class OkHttpClient implements HttpClient {
+public class OkHttpClient extends AbstractHttpClient {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private final okhttp3.OkHttpClient client;
 
@@ -27,8 +27,12 @@ public class OkHttpClient implements HttpClient {
                 .build();
     }
 
+    public OkHttpClient(okhttp3.OkHttpClient client) {
+        this.client = client;
+    }
+
     @Override
-    public CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String jsonBody) {
+    protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String jsonBody) {
         Request request = new Request.Builder()
                 .url(url)
                 .headers(Headers.of(headers))
@@ -39,7 +43,8 @@ public class OkHttpClient implements HttpClient {
     }
 
     @Override
-    public CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String fileName, InputStream content, String contentType) {
+    protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
+            InputStream content, String contentType) {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart(fileName, fileName,
@@ -56,7 +61,7 @@ public class OkHttpClient implements HttpClient {
     }
 
     @Override
-    public CompletableFuture<HttpResponse> get(String url, Map<String, String> headers) {
+    protected CompletableFuture<HttpResponse> executeGet(String url, Map<String, String> headers) {
         Request request = new Request.Builder()
                 .url(url)
                 .headers(Headers.of(headers))
@@ -83,7 +88,7 @@ public class OkHttpClient implements HttpClient {
     }
 
     @Override
-    public void close() {
+    protected void closeInternal() {
         client.dispatcher().executorService().shutdown();
         client.connectionPool().evictAll();
     }

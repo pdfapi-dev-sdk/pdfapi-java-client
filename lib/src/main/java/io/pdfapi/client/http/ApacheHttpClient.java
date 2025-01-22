@@ -16,76 +16,74 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
-public class ApacheHttpClient implements HttpClient {
+public class ApacheHttpClient extends AbstractHttpClient {
     private final CloseableHttpClient httpClient;
 
     public ApacheHttpClient() {
         this.httpClient = HttpClients.createDefault();
     }
 
-    @Override
-    public CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String jsonBody) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                HttpPost httpPost = new HttpPost(url);
-                headers.forEach(httpPost::addHeader);
-                httpPost.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+    public ApacheHttpClient(CloseableHttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 
-                try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-                    return convertResponse(response);
-                }
+    @Override
+    protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String jsonBody) {
+        return CompletableFuture.supplyAsync(() -> {
+            HttpPost httpPost = new HttpPost(url);
+            headers.forEach(httpPost::addHeader);
+            httpPost.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+
+            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+                return convertResponse(response);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to execute POST request", e);
+                throw new RuntimeException(e);
             }
         });
     }
 
     @Override
-    public CompletableFuture<HttpResponse> post(String url, Map<String, String> headers, String fileName,
-                                              InputStream content, String contentType) {
+    protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
+            InputStream content, String contentType) {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                HttpPost httpPost = new HttpPost(url);
-                headers.forEach(httpPost::addHeader);
-                httpPost.setEntity(new InputStreamEntity(content, ContentType.create(contentType)));
+            HttpPost httpPost = new HttpPost(url);
+            headers.forEach(httpPost::addHeader);
+            httpPost.setEntity(new InputStreamEntity(content, ContentType.create(contentType)));
 
-                try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-                    return convertResponse(response);
-                }
+            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+                return convertResponse(response);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to execute POST request with file", e);
+                throw new RuntimeException(e);
             }
         });
     }
 
     @Override
-    public CompletableFuture<HttpResponse> get(String url, Map<String, String> headers) {
+    protected CompletableFuture<HttpResponse> executeGet(String url, Map<String, String> headers) {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                HttpGet httpGet = new HttpGet(url);
-                headers.forEach(httpGet::addHeader);
+            HttpGet httpGet = new HttpGet(url);
+            headers.forEach(httpGet::addHeader);
 
-                try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-                    return convertResponse(response);
-                }
+            try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+                return convertResponse(response);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to execute GET request", e);
+                throw new RuntimeException(e);
             }
         });
-    }
-
-    @Override
-    public void close() {
-        try {
-            httpClient.close();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to close HTTP client", e);
-        }
     }
 
     private HttpResponse convertResponse(CloseableHttpResponse response) throws IOException {
         HttpEntity entity = response.getEntity();
         String body = entity != null ? EntityUtils.toString(entity) : null;
         return new SimpleHttpResponse(response.getStatusLine().getStatusCode(), body);
+    }
+
+    @Override
+    protected void closeInternal() {
+        try {
+            httpClient.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to close Apache HTTP client", e);
+        }
     }
 } 
