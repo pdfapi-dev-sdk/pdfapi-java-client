@@ -1,6 +1,10 @@
-# PDF API Java Client
+<center>
+<img src="logo.svg" alt="logo" width="200" height="200">
+</center>
 
-A Java client library for converting HTML to PDF using the PDF API service.
+# pdfapi.dev Java Client
+
+A Java client library for converting HTML to PDF using the pdfapi.dev service.
 
 ## Features
 
@@ -139,7 +143,7 @@ ConversionRequest request = ConversionRequest.builder()
     .build();
 
 try (FileOutputStream output = new FileOutputStream("output.pdf")) {
-    client.convert(request, output).join();
+    client.convertSync(request, output);
 }
 ```
 
@@ -176,7 +180,7 @@ ConversionRequest request = ConversionRequest.builder()
 
 // Convert HTML to PDF
 try (FileOutputStream output = new FileOutputStream("output.pdf")) {
-    client.convert(request, output).join();
+    client.convertSync(request, output);
 }
 ```
 
@@ -225,7 +229,7 @@ ConversionRequest request = ConversionRequest.builder()
 
 // Convert HTML to PDF
 try (FileOutputStream output = new FileOutputStream("output.pdf")) {
-    client.convert(request, output).join();
+    client.convertSync(request, output);
 }
 ```
 
@@ -236,7 +240,6 @@ The client can be configured with the following options:
 ```java
 PdfApiClientConfig config = PdfApiClientConfig.builder()
         .apiKey("your-api-key")           // Required
-        .baseUrl("https://api.example.com") // Optional, defaults to https://api.pdfapi.io
         .timeoutSeconds(60)                // Optional, defaults to 30
         .build();
 ```

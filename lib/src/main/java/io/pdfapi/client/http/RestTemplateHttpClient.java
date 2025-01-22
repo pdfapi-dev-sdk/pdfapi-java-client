@@ -15,9 +15,11 @@ import org.springframework.web.client.RestTemplate;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class RestTemplateHttpClient extends AbstractHttpClient {
     private final RestTemplate restTemplate;
@@ -40,7 +42,7 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
             return restTemplate.execute(url, HttpMethod.POST, request -> {
                 request.getHeaders().putAll(entity.getHeaders());
                 request.getBody().write(jsonBody.getBytes());
-            }, response -> new StreamingHttpResponse(response.getStatusCode().value(), readContent(response), response));
+            }, response -> new StreamingHttpResponse(response.getStatusCode().value(), readContent(response), response, mapHeaders(response.getHeaders())));
         });
     }
 
@@ -67,7 +69,7 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, httpHeaders);
             ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.POST, entity, byte[].class);
             final var bodyData = Optional.ofNullable(response.getBody()).map(ByteArrayInputStream::new).orElse(null);
-            return new StreamingHttpResponse(response.getStatusCodeValue(), bodyData, null);
+            return new StreamingHttpResponse(response.getStatusCodeValue(), bodyData, null, response.getHeaders());
         });
     }
 
@@ -79,7 +81,7 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
 
             return restTemplate.execute(url, HttpMethod.GET, request -> {
                 request.getHeaders().putAll(entity.getHeaders());
-            }, response -> new StreamingHttpResponse(response.getStatusCode().value(), readContent(response), response));
+            }, response -> new StreamingHttpResponse(response.getStatusCode().value(), readContent(response), response, mapHeaders(response.getHeaders())));
         });
     }
 
@@ -99,5 +101,13 @@ public class RestTemplateHttpClient extends AbstractHttpClient {
     @Override
     protected void closeInternal() {
         // RestTemplate doesn't require explicit cleanup
+    }
+
+    private Map<String, List<String>> mapHeaders(HttpHeaders headers) {
+        return headers.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
     }
 } 

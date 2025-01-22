@@ -1,11 +1,5 @@
 package io.pdfapi.client.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Headers;
@@ -15,6 +9,12 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class OkHttpClient extends AbstractHttpClient {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
@@ -45,7 +45,7 @@ public class OkHttpClient extends AbstractHttpClient {
 
     @Override
     protected CompletableFuture<HttpResponse> executePost(String url, Map<String, String> headers, String fileName,
-            InputStream content, String contentType, String partName) {
+                                                          InputStream content, String contentType, String partName) {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart(partName, fileName,
@@ -84,10 +84,10 @@ public class OkHttpClient extends AbstractHttpClient {
             public void onResponse(Call call, Response response) {
                 ResponseBody body = response.body();
                 if (body != null) {
-                    future.complete(new StreamingHttpResponse(response.code(), body.byteStream(), response));
+                    future.complete(new StreamingHttpResponse(response.code(), body.byteStream(), response, response.headers().toMultimap()));
                 } else {
                     response.close();
-                    future.complete(new StreamingHttpResponse(response.code(), null, null));
+                    future.complete(new StreamingHttpResponse(response.code(), null, null, response.headers().toMultimap()));
                 }
             }
         });

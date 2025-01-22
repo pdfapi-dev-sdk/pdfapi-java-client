@@ -1,5 +1,6 @@
 package io.pdfapi.client.http;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -13,8 +14,11 @@ import org.apache.http.impl.client.HttpClients;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class ApacheHttpClient extends AbstractHttpClient {
     private final CloseableHttpClient httpClient;
@@ -78,11 +82,19 @@ public class ApacheHttpClient extends AbstractHttpClient {
     private HttpResponse convertResponse(CloseableHttpResponse response) throws IOException {
         HttpEntity entity = response.getEntity();
         if (entity != null) {
-            return new StreamingHttpResponse(response.getStatusLine().getStatusCode(), readContent(entity), response);
+            return new StreamingHttpResponse(response.getStatusLine().getStatusCode(), readContent(entity), response, mapHeaders(response.getAllHeaders()));
         } else {
             response.close();
-            return new StreamingHttpResponse(response.getStatusLine().getStatusCode(), null, null);
+            return new StreamingHttpResponse(response.getStatusLine().getStatusCode(), null, null, mapHeaders(response.getAllHeaders()));
         }
+    }
+
+    private Map<String, List<String>> mapHeaders(Header[] allHeaders) {
+        return Arrays.stream(allHeaders)
+                .collect(Collectors.groupingBy(
+                        Header::getName,
+                        Collectors.mapping(Header::getValue, Collectors.toList())
+                ));
     }
 
     private static InputStream readContent(HttpEntity entity) throws IOException {

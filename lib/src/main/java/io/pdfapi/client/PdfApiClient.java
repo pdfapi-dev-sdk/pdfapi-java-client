@@ -58,9 +58,9 @@ public class PdfApiClient implements AutoCloseable {
                                 logger.debug("Assets uploaded for conversion {}", conversionId);
                                 return performConversion(conversionId, request.getHtmlContent());
                             })
-                            .thenCompose(v -> {
+                            .thenCompose(resultLocation -> {
                                 logger.debug("Starting to wait for conversion result {}", conversionId);
-                                return waitForResult(conversionId);
+                                return waitForResult(conversionId, resultLocation);
                             });
                 });
     }
@@ -128,7 +128,7 @@ public class PdfApiClient implements AutoCloseable {
         });
     }
 
-    private CompletableFuture<Void> performConversion(String conversionId, InputStream htmlContent) {
+    private CompletableFuture<String> performConversion(String conversionId, InputStream htmlContent) {
         logger.debug("Starting conversion for ID: {}", conversionId);
         return httpClient.post(
                 baseUrl + PATH_CONVERSIONS + "/" + conversionId + PATH_CONVERT,
@@ -138,19 +138,19 @@ public class PdfApiClient implements AutoCloseable {
                 "text/html",
                 "index"
         ).thenApply(response -> {
-            handleResponse(response);
+            final var r = handleResponse(response);
             logger.debug("Conversion started successfully for ID: {}", conversionId);
-            return null;
+            return r.getLocationHeader().orElseThrow(() -> new PdfApiClientException("Result location not returned during conversion"));
         });
     }
 
-    private CompletableFuture<InputStream> waitForResult(String conversionId) {
-        return waitForResultWithBackoff(conversionId, INITIAL_POLLING_DELAY_MS);
+    private CompletableFuture<InputStream> waitForResult(String conversionId, String resultLocation) {
+        return waitForResultWithBackoff(conversionId, resultLocation, INITIAL_POLLING_DELAY_MS);
     }
 
-    private CompletableFuture<InputStream> waitForResultWithBackoff(String conversionId, long currentDelay) {
+    private CompletableFuture<InputStream> waitForResultWithBackoff(String conversionId, String resultLocation, long currentDelay) {
         logger.trace("Checking conversion status for {} with delay {}ms", conversionId, currentDelay);
-        return getConversionResult(conversionId)
+        return getConversionResult(resultLocation)
                 .thenCompose(result -> {
                     if (result == null) {
                         logger.trace("Conversion {} still in progress, next check in {}ms", conversionId,
@@ -159,15 +159,15 @@ public class PdfApiClient implements AutoCloseable {
                         CompletableFuture.delayedExecutor(currentDelay, TimeUnit.MILLISECONDS)
                                 .execute(() -> delay.complete(null));
                         return delay.thenCompose(v -> waitForResultWithBackoff(conversionId,
-                                Math.min((long) (currentDelay * BACKOFF_MULTIPLIER), MAX_POLLING_DELAY_MS)));
+                                resultLocation, Math.min((long) (currentDelay * BACKOFF_MULTIPLIER), MAX_POLLING_DELAY_MS)));
                     }
                     logger.info("Conversion {} completed successfully", conversionId);
                     return CompletableFuture.completedFuture(result);
                 });
     }
 
-    private CompletableFuture<InputStream> getConversionResult(String conversionId) {
-        return httpClient.get(baseUrl + PATH_CONVERSIONS + "/" + conversionId, getHeaders())
+    private CompletableFuture<InputStream> getConversionResult(String resultLocation) {
+        return httpClient.get(resultLocation, getHeaders())
                 .thenApply(response -> {
                     if (response.getStatusCode() == 204) {
                         return null;
