@@ -72,9 +72,10 @@ public class ConversionRequest {
 
         public Builder headerFile(AssetInput headerFile) {
             this.headerFile = Objects.requireNonNull(headerFile, "Header file must not be null");
+            this.assets.add(headerFile);
             if (this.properties != null) {
                 this.properties = ConversionProperties.builderFrom(properties)
-                    .headerFileName(headerFile.getFileName())
+                    .headerFile(headerFile.getFileName())
                     .build();
             }
             return this;
@@ -82,9 +83,10 @@ public class ConversionRequest {
 
         public Builder footerFile(AssetInput footerFile) {
             this.footerFile = Objects.requireNonNull(footerFile, "Footer file must not be null");
+            this.assets.add(footerFile);
             if (this.properties != null) {
                 this.properties = ConversionProperties.builderFrom(properties)
-                    .footerFileName(footerFile.getFileName())
+                    .footerFile(footerFile.getFileName())
                     .build();
             }
             return this;
@@ -102,10 +104,10 @@ public class ConversionRequest {
                 ConversionProperties.Builder propsBuilder = ConversionProperties.builderFrom(properties);
 
                 if (headerFile != null) {
-                    propsBuilder.headerFileName(headerFile.getFileName());
+                    propsBuilder.headerFile(headerFile.getFileName());
                 }
                 if (footerFile != null) {
-                    propsBuilder.footerFileName(footerFile.getFileName());
+                    propsBuilder.footerFile(footerFile.getFileName());
                 }
 
                 properties = propsBuilder.build();

@@ -4,16 +4,16 @@ import java.util.Objects;
 
 public class ConversionProperties {
     private final PageFormat format;
-    private final String headerFileName;
-    private final String footerFileName;
+    private final String headerFile;
+    private final String footerFile;
     private final float scale;
     private final Margin margin;
     private final boolean landscape;
 
     private ConversionProperties(Builder builder) {
         this.format = Objects.requireNonNull(builder.format, "Format must not be null");
-        this.headerFileName = builder.headerFileName;
-        this.footerFileName = builder.footerFileName;
+        this.headerFile = builder.headerFileName;
+        this.footerFile = builder.footerFileName;
         this.scale = builder.scale;
         this.margin = Objects.requireNonNull(builder.margin, "Margin must not be null");
         this.landscape = builder.landscape;
@@ -23,12 +23,12 @@ public class ConversionProperties {
         return format;
     }
 
-    public String getHeaderFileName() {
-        return headerFileName;
+    public String getHeaderFile() {
+        return headerFile;
     }
 
-    public String getFooterFileName() {
-        return footerFileName;
+    public String getFooterFile() {
+        return footerFile;
     }
 
     public float getScale() {
@@ -54,8 +54,8 @@ public class ConversionProperties {
             .scale(properties.scale)
             .margin(properties.margin)
             .landscape(properties.landscape)
-            .headerFileName(properties.headerFileName)
-            .footerFileName(properties.footerFileName);
+            .headerFile(properties.headerFile)
+            .footerFile(properties.footerFile);
     }
 
     public static class Builder {
@@ -71,12 +71,12 @@ public class ConversionProperties {
             return this;
         }
 
-        public Builder headerFileName(String headerFileName) {
+        public Builder headerFile(String headerFileName) {
             this.headerFileName = headerFileName;
             return this;
         }
 
-        public Builder footerFileName(String footerFileName) {
+        public Builder footerFile(String footerFileName) {
             this.footerFileName = footerFileName;
             return this;
         }
