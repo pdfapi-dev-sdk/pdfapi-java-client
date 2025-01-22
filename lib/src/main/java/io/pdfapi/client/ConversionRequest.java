@@ -2,7 +2,6 @@ package io.pdfapi.client;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,7 +18,7 @@ public class ConversionRequest {
     private ConversionRequest(Builder builder) {
         this.properties = Objects.requireNonNull(builder.properties, "Properties must not be null");
         this.htmlContent = Objects.requireNonNull(builder.htmlContent, "HTML content must not be null");
-        this.assets = Collections.unmodifiableList(new ArrayList<>(builder.assets));
+        this.assets = List.copyOf(builder.assets);
         this.headerFile = builder.headerFile;
         this.footerFile = builder.footerFile;
     }
@@ -116,4 +115,26 @@ public class ConversionRequest {
             return new ConversionRequest(this);
         }
     }
-} 
+
+    public static class AssetInput {
+        private final InputStream content;
+        private final String fileName;
+
+        public AssetInput(InputStream content, String fileName) {
+            this.content = content;
+            this.fileName = fileName;
+        }
+
+        public InputStream getContent() {
+            return content;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public static AssetInput of(InputStream content, String fileName) {
+            return new AssetInput(content, fileName);
+        }
+    }
+}

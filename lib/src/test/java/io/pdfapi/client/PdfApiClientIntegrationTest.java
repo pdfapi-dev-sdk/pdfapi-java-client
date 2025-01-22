@@ -127,12 +127,12 @@ class PdfApiClientIntegrationTest {
         return new ByteArrayInputStream(content);
     }
 
-    private AssetInput createAsset(String content, String fileName) {
-        return AssetInput.of(createInputStream(content), fileName);
+    private ConversionRequest.AssetInput createAsset(String content, String fileName) {
+        return ConversionRequest.AssetInput.of(createInputStream(content), fileName);
     }
 
-    private AssetInput createAsset(byte[] content, String fileName) {
-        return AssetInput.of(createInputStream(content), fileName);
+    private ConversionRequest.AssetInput createAsset(byte[] content, String fileName) {
+        return ConversionRequest.AssetInput.of(createInputStream(content), fileName);
     }
 
     @Test

@@ -44,6 +44,7 @@ public class PdfApiClient implements AutoCloseable {
 
     /**
      * Convert HTML to PDF using the provided conversion request.
+     *
      * @param request conversion request containing all necessary data
      * @return PDF content as input stream
      */
@@ -80,6 +81,16 @@ public class PdfApiClient implements AutoCloseable {
         });
     }
 
+    /**
+     * Convert HTML to PDF and write the result to the provided output stream sync.
+     *
+     * @param request conversion request containing all necessary data
+     * @param output  stream to write the PDF content to
+     */
+    void convertSync(ConversionRequest request, OutputStream output) {
+        convert(request, output).join();
+    }
+
     private CompletableFuture<String> initializeConversion(ConversionProperties properties) {
         try {
             String json = objectMapper.writeValueAsString(properties);
@@ -93,7 +104,7 @@ public class PdfApiClient implements AutoCloseable {
         }
     }
 
-    private CompletableFuture<Void> uploadAssetsInParallel(String conversionId, List<AssetInput> assets) {
+    private CompletableFuture<Void> uploadAssetsInParallel(String conversionId, List<ConversionRequest.AssetInput> assets) {
         logger.debug("Uploading {} assets for conversion {}", assets.size(), conversionId);
         List<CompletableFuture<Void>> uploads = assets.stream()
                 .map(asset -> attachAsset(conversionId, asset.getContent(), asset.getFileName()))
