@@ -14,7 +14,8 @@ A Java client library for converting HTML to PDF using the pdfapi.dev service.
 - Support for custom page formats, margins, and scaling
 - Asset attachment support
 - Header and footer support
-- OkHttp-based implementation
+- Multiple HTTP client implementations available: OkHttp (default), Apache HttpClient, RestTemplate (Spring)
+- Custom HTTP client support
 
 ## Installation
 
