@@ -22,7 +22,7 @@ A Java client library for converting HTML to PDF using the pdfapi.dev service.
 
 ```groovy
 dependencies {
-    implementation 'io.pdfapi:pdfapi-java-client:1.0.0'
+    implementation 'io.pdfapi:pdfapi-java-client:1.0.1'
 }
 ```
 
@@ -32,7 +32,7 @@ dependencies {
 <dependency>
     <groupId>io.pdfapi</groupId>
     <artifactId>pdfapi-java-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -46,7 +46,7 @@ By default, the library uses OkHttp as its HTTP client implementation. However, 
 
 ```groovy
 dependencies {
-    implementation('io.pdfapi:pdfapi-java-client:1.0.0') {
+    implementation('io.pdfapi:pdfapi-java-client:1.0.1') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
     implementation 'org.apache.httpcomponents:httpclient:4.5.13'
@@ -59,7 +59,7 @@ dependencies {
 <dependency>
     <groupId>io.pdfapi</groupId>
     <artifactId>pdfapi-java-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <exclusions>
         <exclusion>
             <groupId>com.squareup.okhttp3</groupId>
@@ -80,7 +80,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation('io.pdfapi:pdfapi-java-client:1.0.0') {
+    implementation('io.pdfapi:pdfapi-java-client:1.0.1') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
     implementation 'org.springframework:spring-web:5.3.13'
@@ -93,7 +93,7 @@ dependencies {
 <dependency>
     <groupId>io.pdfapi</groupId>
     <artifactId>pdfapi-java-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <exclusions>
         <exclusion>
             <groupId>com.squareup.okhttp3</groupId>
@@ -257,6 +257,14 @@ The following page formats are supported:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Release
+
+To release a new version, run the following command:
+
+```bash
+./gradlew clean build publish && mkdir -p build/jreleaser && ./gradlew jreleaserFullRelease
+```
 
 ## License
 
