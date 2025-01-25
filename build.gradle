@@ -7,11 +7,13 @@
 
 plugins {
     // Apply the java-library plugin for API and implementation separation.
+    id 'signing'
     id 'java-library'
     id 'maven-publish'
+    id 'org.jreleaser' version '1.16.0'
 }
 
-group = 'io.pdfapi'
+group = 'dev.pdfapi'
 version = '1.0.0'
 
 repositories {
@@ -85,27 +87,61 @@ check.dependsOn integrationTest
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        maven(MavenPublication) {
+            groupId = 'dev.pdfapi'
+            artifactId = 'pdfapi-java-client'
+
             from components.java
+
             pom {
-                name = 'pdfapi.dev Java Client'
+                name = 'pdfapi-java-client'
                 description = 'Java client library for pdfapi.dev'
-                
+                url = 'https://github.com/pdfapi-dev-sdk/pdfapi-java-client'
+                inceptionYear = '2025'
                 licenses {
                     license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        name = 'Apache-2.0'
+                        url = 'https://spdx.org/licenses/Apache-2.0.html'
                     }
                 }
-                
                 developers {
                     developer {
-                        id = 'pdfapi.dev'
-                        name = 'PDF API Team'
-                        email = 'support@pdfapi.dev'
+                        id = 'mcharmas'
+                        name = 'Michal Charmas'
                     }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/pdfapi-dev-sdk/pdfapi-java-client.git'
+                    developerConnection = 'scm:git:https://github.com/pdfapi-dev-sdk/pdfapi-java-client.git'
+                    url = 'https://github.com/pdfapi-dev-sdk/pdfapi-java-client'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+}
+
+jreleaser {
+    signing {
+        active = 'ALWAYS'
+        armored = true
+    }
+        
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'ALWAYS'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    stagingRepository('build/staging-deploy')
                 }
             }
         }
     }
 }
+
